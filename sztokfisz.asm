@@ -81,6 +81,7 @@ sztokfisz_wlasciwy: ;; po skoku tutaj xmm0 ma zmieniona wartosc na chyba -2f, -2
 	pand xmm0, xmm1		;wywalamy ujemne delty, zostawiamy zera
 	sqrtps xmm0, xmm0	;pierwiastek z delty
 	mulps xmm0, xmm7	;xmm0 ma -pierwiastek z delty,czyli prawie wynik
+	pand xmm0, xmm1
 ; w tym miejscu mamy w xmm0 juz -pierwiastek z delty, trzeba tylko poustawiac
 ; xmm4 (-b) tak jak opisane wczesniej i dalej realizowac plan
 ; USTAWIANIE xmm4 tak jak opisane:
@@ -112,10 +113,10 @@ sztokfisz_wlasciwy: ;; po skoku tutaj xmm0 ma zmieniona wartosc na chyba -2f, -2
 ; kolory sa dodatnie!
 	movhlps xmm1, xmm0
 	minps xmm0, xmm1	;w xmm0 sa minima, trzeba jeszcze z nich dwoch
-	shufpd xmm1, xmm0, 0x55 ;drugi od lewej element na pierwsze od lewe
+	shufps xmm1, xmm0, 0x55 ;drugi od lewej element na pierwsze od lewe
 	minps xmm0, xmm1	     ;teraz w xmm0 na pierwszym miejscu od lewej
 ; mamy minimum. Teraz trzeba to skopiowac wszedzie
-	shufpd xmm0, xmm0, 0x00	;xmm0 jest caly wypelniony najmniejszym wynikiem
+	shufps xmm0, xmm0, 0x00	;xmm0 jest caly wypelniony najmniejszym wynikiem
 	cmpeqps xmm0, xmm2	;w xmm2 sa pierwotne wyniki
 	pand xmm2, xmm0		;w xmm2 tylko min i same zera
 	pand xmm6, xmm0		;w xmm6 zostaja tylko zera i jedyny,wlasciwy kolor
@@ -142,10 +143,14 @@ sztokfisz_wlasciwy: ;; po skoku tutaj xmm0 ma zmieniona wartosc na chyba -2f, -2
 	je petla.po_wlasciwym_sztokfiszu
 .znaleziony:
 	cmp [max], eax
-	jg .lepszy
+	jl .lepszy
 	jmp petla.po_wlasciwym_sztokfiszu
 .lepszy:
 	mov [kolor], r9d
+	cmp eax, 0x7F800000
+	jne .jest_nienieskonczonosc
+	mov eax, 0xFFFFFFFFFFFFFFFF
+.jest_nienieskonczonosc:
 	mov [max], eax
 	jmp petla.po_wlasciwym_sztokfiszu
 
@@ -201,7 +206,7 @@ petla:
 	add r15, 4 * 4
 	jmp .po_kulach
 .koniec_po_kulach:
-	mov r9d, [max]
+	mov r9d, [kolor]
 	mov [r10], r9d
 	add r10, 4		;nastepna komorka!
 	add r8d, 1
