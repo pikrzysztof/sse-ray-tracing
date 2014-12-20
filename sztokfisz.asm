@@ -40,7 +40,7 @@ section .text
 ; w xmm7 jest -1f, przydaje sie.
 ; w xmm8 potem bedziemy trzymac z_0, rejestr roboczy
 ; w xmm9 jest -4f
-sztokfisz_wlasciwy:
+sztokfisz_wlasciwy: ;; po skoku tutaj xmm0 ma zmieniona wartosc na chyba -2f, -2f, -3f, -4f
 ; najpierw liczymy delte i -b do wyliczenia pierwiastka rownania kwadratowego
 	subps xmm0, xmm1
 	subps xmm2, xmm3
