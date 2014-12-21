@@ -28,9 +28,6 @@ void przygotuj_z_stdin(kula_t **kule, int *liczba_kul,
 	(**kule).z = malloc(sizeof(float) * *liczba_kul);
 	(**kule).r = malloc(sizeof(float) * *liczba_kul);
 	(**kule).kol = malloc(sizeof(float) * *liczba_kul);
-	for (int i = 0; i < *liczba_kul; ++i) {
-		*((**kule).x) = 0x7F800000; /* + nieskonczonosc */
-	}
 	for (int i = 0; i < wlasciwa_liczba_kul; ++i) {
 		scanf("%f %f %f %f %"SCNu8" %"SCNu8" %"SCNu8"\n",
 		      (**kule).x + i, (**kule).y + i,
@@ -39,21 +36,12 @@ void przygotuj_z_stdin(kula_t **kule, int *liczba_kul,
 		memcpy((**kule).kol + i, kolor, sizeof(pixel));
 	}
 	for (int i = wlasciwa_liczba_kul; i < *liczba_kul; ++i) {
-		*((**kule).x) = 0x7F800000; /* + nieskonczonosc */
-		*((**kule).y) = 0x7F800000; /* + nieskonczonosc */
-		*((**kule).z) = 0x7F800000; /* + nieskonczonosc */
-		*((**kule).r) = 0.0; /* + nieskonczonosc */
+		*((**kule).x + i) = 0x7F800000; /* + nieskonczonosc */
+		*((**kule).y + i) = 0x7F800000; /* + nieskonczonosc */
+		*((**kule).z + i) = 0x7F800000; /* + nieskonczonosc */
+		*((**kule).r + i) = 0.0;
 	}
-	memset((**kule).x + wlasciwa_liczba_kul, 0,
-	       sizeof(float) * (*liczba_kul - wlasciwa_liczba_kul));
-	memset((**kule).y + wlasciwa_liczba_kul, 0,
-	       sizeof(float) * (*liczba_kul - wlasciwa_liczba_kul));
-	memset((**kule).z + wlasciwa_liczba_kul, 0,
-	       sizeof(float) * (*liczba_kul - wlasciwa_liczba_kul));
-	memset((**kule).r + wlasciwa_liczba_kul, 0,
-	       sizeof(float) * (*liczba_kul - wlasciwa_liczba_kul));
-	memset((**kule).kol + wlasciwa_liczba_kul, 0,
-	       sizeof(pixel) * (*liczba_kul - wlasciwa_liczba_kul));
+
 	for (int i = 0; i < *szer; ++i) {
 		for (int j = 0; j < *wys; ++j) {
 			(*obraz)[i][j] = 0x005588AA;
@@ -66,25 +54,21 @@ void zrob_plik_ppm(pixel **obraz, int szer, int wys)
 	int wynik;
 	size_t rozmiar = sizeof(pixel);
 	unsigned char do_wypisania_koloru[rozmiar];
-	/* magic number */
+	/* magic PPM number */
 	FILE* strumien = fopen("a.ppm", "w");
 	if (strumien == NULL)
 		goto fail;
 	fprintf(strumien, "P3\n%i %i\n%i\n", szer, wys, 255);
 	fprintf(strumien,"# Plik z wynikiem sledzenia promieni\n");
-	fprintf(stderr, "P3 %i %i %i\n", szer, wys, 255);
 	for (int y = 0; y < wys; ++y) {
 		for (int x = 0; x < szer; ++x) {
 			memcpy(do_wypisania_koloru, obraz[x] + y, sizeof(pixel));
 			for (size_t i = 1; i < rozmiar; ++i) {
 				fprintf(strumien, "%"SCNu8" ",
 					do_wypisania_koloru[i]);
-				fprintf(stderr, "%"SCNu8" ",
-					do_wypisania_koloru[i]);
 			}
 		}
 		fprintf(strumien, "\n");
-		fprintf(stderr, "\n");
 	}
 	fflush(strumien);
 	wynik = fclose(strumien);

@@ -40,6 +40,7 @@ section .text
 ; w xmm7 jest -1f, przydaje sie.
 ; w xmm8 potem bedziemy trzymac z_0, rejestr roboczy
 ; w xmm9 jest -4f
+; w xmm10 sa +niesk
 sztokfisz_wlasciwy: ;; po skoku tutaj xmm0 ma zmieniona wartosc na chyba -2f, -2f, -3f, -4f
 ; najpierw liczymy delte i -b do wyliczenia pierwiastka rownania kwadratowego
 	subps xmm0, xmm1
@@ -64,8 +65,9 @@ sztokfisz_wlasciwy: ;; po skoku tutaj xmm0 ma zmieniona wartosc na chyba -2f, -2
 ; w xmm7 jest -1f
 ; w xmm9 jest -4f
 ; w xmm6 sa kolory (nieszczegolnie to sa jakies fajne liczby, ale SA TO LICZBY!)
+; w xmm10 sa 4 plus nieskonczonosci
 ; wolne, robocze rejestry:
-; xmm1, xmm2, xmm3, xmm5, xmm8, xmm10-15
+; xmm1, xmm2, xmm3, xmm5, xmm8, xmm11-15
 
 ; Teraz plan jest taki:
 ; 1) wyznaczyc miejsca, gdzie jest ujemna delta
@@ -73,7 +75,7 @@ sztokfisz_wlasciwy: ;; po skoku tutaj xmm0 ma zmieniona wartosc na chyba -2f, -2
 ; oraz kolor kuli, ktora jest zwiazana z tym rejestrem na same zera (kolor tla)
 ; Dzieki temu jak policzymy sobie gdzie sie przecina, to wyjda jakies sensowne
 ; wyniki, funkcja min bedzie mozna wyciagnac najblizsza kule i jej kolor.
-	movaps xmm8, [CZTERY_PLUS_NIESKONCZONOSCI] ;przyda sie potem
+	movaps xmm8, xmm10 ;przyda sie potem, 4 plus nieskonczonosci
 	pxor xmm1, xmm1		;teraz chcemy wyznaczyc gdzie delta jest >= 0
 	cmpleps xmm1, xmm0	;tam gdzie delta bedzie nieujemna w xmm1 sa 1.
 ; teraz nalezy wykorzystac zawartosc xmm1, zeby ustawic b = nieskonczonosc
@@ -113,7 +115,8 @@ sztokfisz_wlasciwy: ;; po skoku tutaj xmm0 ma zmieniona wartosc na chyba -2f, -2
 ; kolory sa dodatnie!
 	movhlps xmm1, xmm0
 	minps xmm0, xmm1	;w xmm0 sa minima, trzeba jeszcze z nich dwoch
-	shufps xmm1, xmm0, 0x55 ;drugi od lewej element na pierwsze od lewe
+	movaps xmm1, xmm0
+	shufps xmm1, xmm1, 0x55 ;drugi od lewej element na pierwsze od lewe
 	minps xmm0, xmm1	     ;teraz w xmm0 na pierwszym miejscu od lewej
 ; mamy minimum. Teraz trzeba to skopiowac wszedzie
 	shufps xmm0, xmm0, 0x00	;xmm0 jest caly wypelniony najmniejszym wynikiem
@@ -128,28 +131,41 @@ sztokfisz_wlasciwy: ;; po skoku tutaj xmm0 ma zmieniona wartosc na chyba -2f, -2
 	mov rax, [wspolrzedne]
 	mov r9, [kolory]
 	cmp eax, 0
-	jne .znaleziony
+	jne .byc_moze_znaleziony
 	shr rax, 32
 	shr r9, 32
 	cmp eax, 0
-	jne .znaleziony
+	jne .byc_moze_znaleziony
 	mov rax, [wspolrzedne + 8]
 	mov r9, [kolory + 8]
 	cmp eax, 0
-	jne .znaleziony
+	jne .byc_moze_znaleziony
 	shr r9, 32
 	shr rax, 32
 	cmp eax, 0
 	je petla.po_wlasciwym_sztokfiszu
+.byc_moze_znaleziony:
+	cmp eax, 0x7F800000
+	jne .znaleziony
+	mov eax, 0xFFFFFFFF
 .znaleziony:
-	cmp [max], eax
+	fld dword [max]
+	sub esp, 4
+	mov [esp], eax
+	fld dword [esp]
+	add esp, 4
+	shl rax, 32
+	fcompp
+	fstsw ax
+	sahf
+	shr rax, 32
 	jl .lepszy
 	jmp petla.po_wlasciwym_sztokfiszu
 .lepszy:
 	mov [kolor], r9d
-	cmp eax, 0x7F800000
+	cmp eax, 0x7FFFFFFF
 	jne .jest_nienieskonczonosc
-	mov eax, 0xFFFFFFFFFFFFFFFF
+	mov eax, 0xFFFFFFFF
 .jest_nienieskonczonosc:
 	mov [max], eax
 	jmp petla.po_wlasciwym_sztokfiszu
@@ -199,11 +215,11 @@ petla:
 	movaps xmm6, [r15]
 	jmp sztokfisz_wlasciwy
 .po_wlasciwym_sztokfiszu:
-	add r11, 4 * 4		;przesuwamy wskaznik o 4 floaty przodu
-	add r12, 4 * 4
-	add r13, 4 * 4
-	add r14, 4 * 4
-	add r15, 4 * 4
+	add r11, 16		;przesuwamy wskaznik o 4 floaty przodu
+	add r12, 16
+	add r13, 16
+	add r14, 16
+	add r15, 16
 	jmp .po_kulach
 .koniec_po_kulach:
 	mov r9d, [kolor]
@@ -241,7 +257,7 @@ sztokfisz:
 	push r15
 	movaps xmm7, [CZTERY_MINUS_JEDYNKI_FLOAT]
 	movaps xmm9, [CZTERY_MINUS_CZWORKI_FLOAT]
-	movaps xmm10, [CZTERY_JEDYNKI_FLOAT]
+	movaps xmm10, [CZTERY_PLUS_NIESKONCZONOSCI]
 	jmp petla
 
 .koniec:
