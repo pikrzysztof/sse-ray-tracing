@@ -145,28 +145,13 @@ sztokfisz_wlasciwy: ;; po skoku tutaj xmm0 ma zmieniona wartosc na chyba -2f, -2
 	cmp eax, 0
 	je petla.po_wlasciwym_sztokfiszu
 .byc_moze_znaleziony:
-	cmp eax, 0x7F800000
-	jne .znaleziony
-	mov eax, 0xFFFFFFFF
-.znaleziony:
-	fld dword [max]
-	sub esp, 4
-	mov [esp], eax
-	fld dword [esp]
-	add esp, 4
-	shl rax, 32
-	fcompp
-	fstsw ax
-	sahf
-	shr rax, 32
-	jl .lepszy
+	cmp eax, 0x7F800000	;+nieskonczonosc
+	je petla.po_wlasciwym_sztokfiszu
+	cmp [max], eax
+	jb .lepszy
 	jmp petla.po_wlasciwym_sztokfiszu
 .lepszy:
 	mov [kolor], r9d
-	cmp eax, 0x7FFFFFFF
-	jne .jest_nienieskonczonosc
-	mov eax, 0xFFFFFFFF
-.jest_nienieskonczonosc:
 	mov [max], eax
 	jmp petla.po_wlasciwym_sztokfiszu
 
