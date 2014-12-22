@@ -27,8 +27,20 @@ section .bss
 	wspolrzedne resd 4 	;do wczytywania, wrzucania z sse
 	kolory resd 4
 	kolor resd 1
+	tmp resd 1
 
 section .text
+
+%macro zaladuj_wspolrzedne_i_sprawdz 1
+	mov eax, [wspolrzedne + %1]
+	cmp eax, 0
+	je %%powszystkim
+	cmp eax, 0x7F800000
+	je %%powszystkim
+	mov r9d, [kolory + %1]
+	jmp sztokfisz_wlasciwy.znaleziony
+%%powszystkim:
+%endmacro
 
 ; w xmm0 jest x, ktory teraz obrabiamy
 ; w xmm1 jest x_0 - srodek kuli
@@ -128,45 +140,41 @@ sztokfisz_wlasciwy: ;; po skoku tutaj xmm0 ma zmieniona wartosc na chyba -2f, -2
 ; teraz lokalizujemy ta jedyna niezerowa pare liczb
 	movaps [wspolrzedne], xmm2
 	movaps [kolory], xmm6
-	mov rax, [wspolrzedne]
-	mov r9, [kolory]
-	cmp eax, 0
-	jne .byc_moze_znaleziony
-	shr rax, 32
-	shr r9, 32
-	cmp eax, 0
-	jne .byc_moze_znaleziony
-	mov rax, [wspolrzedne + 8]
-	mov r9, [kolory + 8]
-	cmp eax, 0
-	jne .byc_moze_znaleziony
-	shr r9, 32
-	shr rax, 32
-	cmp eax, 0
-	je petla.po_wlasciwym_sztokfiszu
-.byc_moze_znaleziony:
-	cmp eax, 0x7F800000
-	jne .znaleziony
-	mov eax, 0xFFFFFFFF
+	zaladuj_wspolrzedne_i_sprawdz 0
+	zaladuj_wspolrzedne_i_sprawdz 4
+	zaladuj_wspolrzedne_i_sprawdz 8
+	zaladuj_wspolrzedne_i_sprawdz 12
+	jmp petla.po_wlasciwym_sztokfiszu
+	; mov eax, [wspolrzedne]
+	; mov r9, [kolory]
+	; cmp eax, 0
+	; jne .byc_moze_znaleziony
+	; shr rax, 32
+	; shr r9, 32
+	; cmp eax, 0
+	; jne .byc_moze_znaleziony
+	; mov rax, [wspolrzedne + 8]
+	; mov r9, [kolory + 8]
+	; cmp eax, 0
+	; jne .byc_moze_znaleziony
+	; shr r9, 32
+	; shr rax, 32
+	; cmp eax, 0
+	; je petla.po_wlasciwym_sztokfiszu
 .znaleziony:
-	fld dword [max]
-	sub esp, 4
-	mov [esp], eax
-	fld dword [esp]
-	add esp, 4
-	shl rax, 32
-	fcompp
-	fstsw ax
-	sahf
-	shr rax, 32
-	jl .lepszy
+	cmp eax, [max]
+	; mov [tmp], eax
+	; fld dword [tmp]
+	; fld dword [max]
+	; shl rax, 32
+	; fcompp
+	; fstsw ax
+	; sahf
+	; shr rax, 32
+	jb .lepszy
 	jmp petla.po_wlasciwym_sztokfiszu
 .lepszy:
 	mov [kolor], r9d
-	cmp eax, 0x7FFFFFFF
-	jne .jest_nienieskonczonosc
-	mov eax, 0xFFFFFFFF
-.jest_nienieskonczonosc:
 	mov [max], eax
 	jmp petla.po_wlasciwym_sztokfiszu
 
@@ -190,7 +198,7 @@ petla:
 	cmp r8d, [y]
 	je .koniec_po_igrekach
 	mov [kolor], dword 0
-	mov [max], dword 0
+	mov [max], dword 0x7FFFFFFF
 ; przygotowujemy sledzenie promieni z tego miejsca
 	mov r11, [rdi]	       ;iksy kul
 	mov r12, [rdi + 8]     ;igreki kul
