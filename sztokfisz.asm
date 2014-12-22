@@ -163,14 +163,6 @@ sztokfisz_wlasciwy: ;; po skoku tutaj xmm0 ma zmieniona wartosc na chyba -2f, -2
 	; je petla.po_wlasciwym_sztokfiszu
 .znaleziony:
 	cmp eax, [max]
-	; mov [tmp], eax
-	; fld dword [tmp]
-	; fld dword [max]
-	; shl rax, 32
-	; fcompp
-	; fstsw ax
-	; sahf
-	; shr rax, 32
 	jb .lepszy
 	jmp petla.po_wlasciwym_sztokfiszu
 .lepszy:
@@ -198,7 +190,7 @@ petla:
 	cmp r8d, [y]
 	je .koniec_po_igrekach
 	mov [kolor], dword 0
-	mov [max], dword 0x7FFFFFFF
+	mov [max], dword 0xFFFFFFFF
 ; przygotowujemy sledzenie promieni z tego miejsca
 	mov r11, [rdi]	       ;iksy kul
 	mov r12, [rdi + 8]     ;igreki kul
