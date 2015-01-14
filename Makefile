@@ -1,5 +1,5 @@
-CFLAGS=-Wall -Wextra -std=c11 -fdiagnostics-color=auto --pedantic
-LDFLAGS=-Wall -Wextra -fdiagnostics-color=auto --pedantic
+CFLAGS=-Wall -Wextra -std=c11 --pedantic
+LDFLAGS=-Wall -Wextra --pedantic
 LIBS=sztokfiszlib.o sztokfisz.o
 LD=gcc
 ASM=nasm
